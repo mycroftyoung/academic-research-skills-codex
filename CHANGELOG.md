@@ -4,6 +4,33 @@ All notable changes to the Codex package are documented here.
 
 ## Unreleased
 
+## [0.1.27] - 2026-08-24
+
+### What's Changed
+- Synced the vendored ARS suite to the signed `v3.21.1` release at
+  `127ff85e4bbfcdd10b95040537b6c6bd7ad17aeb`.
+- Added the default-off deterministic research-workflow profile substrate and
+  opt-in `ARS_INQUIRY_LEDGER=1` branch-ledger alpha, preserving explicit
+  selection, visible field-general fallback, append-only correction, bounded
+  summaries, and non-destructive stale-state semantics.
+- Vendored sealed preregistration contracts and hermetic tests for future model
+  promotion bakeoffs, plus the retained GPT-5.6 Sol Codex-transport bakeoff
+  evidence. The history-dependent tree verifier remains an upstream
+  release-discipline tool because the vendored subtree has no upstream Git
+  history.
+- Adopted the Codex CLI 0.147.0 citation-transport repairs: authentication
+  attestation may arrive on stdout or stderr, the provider schema omits
+  unsupported `uniqueItems` while local duplicate rejection stays fail-closed,
+  and the bounded search host remains available without widening the accepted
+  event grammar.
+- Added the source-backed review-criteria proving set, exact-profile source
+  receipts, shared Markdown grammar, workflow-profile and inquiry-ledger
+  runtimes, contracts, and hermetic tests.
+- Preserved the single-root Codex router, `WORKFLOW.md` entrypoint and content
+  lock overlays, inactive Claude-only validators, MiniMax compatibility layer,
+  materialized Desktop plugin mirror, and separately pinned experiment-agent
+  v1.1.0 tree.
+
 ## [0.1.26] - 2026-08-18
 
 ### What's Changed

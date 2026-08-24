@@ -74,10 +74,10 @@ Instead it provides an explicit Codex orchestration contract:
   evidence and severity;
 - pipeline orchestration stops at requested checkpoints;
 - the heavy `ars-full`, `ars-reviewer`, and `ars-revision-coach` routes inherit
-  the active session model because v3.21 gives them no model frontmatter;
+  the active session model because v3.21.1 gives them no model frontmatter;
   light-route `sonnet` hints remain upstream metadata and do not force a Codex
   model;
-- ARS v3.21 retains model tiering as advisory metadata; it is applied only
+- ARS v3.21.1 retains model tiering as advisory metadata; it is applied only
   when a Codex runtime provides explicit per-dispatch model selection;
 - canonical cross-model handoffs are validated and transported by the
   dispatching context, not by least-privilege owner roles;
@@ -86,9 +86,13 @@ Instead it provides an explicit Codex orchestration contract:
 - `ARS_CROSS_MODEL_TRANSPORT=codex` explicitly selects the contained
   ChatGPT-subscription transport only for one-reference Stage 2.5 / 4.5
   citation checks; it requires Codex CLI 0.147.0 or newer, `ARS_CROSS_MODEL`,
-  the exact `Logged in using ChatGPT` attestation, and provider/content/cost
-  consent. It accepts no caller-authored prompt or path and has no automatic
-  API fallback or reviewer/DA/calibration/re-review/handoff scope;
+  the exact `Logged in using ChatGPT` attestation on stdout or stderr, and
+  provider/content/cost consent. The provider schema omits unsupported
+  `uniqueItems` while local duplicate refusal stays fail-closed; `code_mode`
+  remains disabled, but the bounded host needed for standalone search remains
+  available under the closed event grammar. It accepts no caller-authored
+  prompt or path and has no automatic API fallback or
+  reviewer/DA/calibration/re-review/handoff scope;
 - the contained citation transport treats `turn/completed` as provisional and
   accepts only after clean process exit plus stdout/stderr EOF; late forbidden
   or malformed events and drain failures remain visible failures;
@@ -107,7 +111,9 @@ Instead it provides an explicit Codex orchestration contract:
   while optional cross-run adjudication activity is local and advisory only;
 - review-target context is author-confirmed and criterion pointers stay aligned
   across formative, internal, and external review without affecting integrity
-  verdicts, editorial arithmetic, checkpoints, or author triage;
+  verdicts, editorial arithmetic, checkpoints, or author triage. The shipped
+  MSR 2027/SIGSOFT proving set demonstrates one exact-profile source-binding
+  path, not venue or discipline coverage;
 - human-subjects authority keeps review-ethics and data-protection axes
   separate and unresolved states visible; outputs never simulate an IRB/REC,
   legal determination, institutional authorization, or readiness decision;
@@ -120,10 +126,21 @@ Instead it provides an explicit Codex orchestration contract:
 - the v3.21 claim-standing query-plan, affirmative-consent, freshness, and
   transmission sequence is preserved as a separate user-requested advisory
   path; eligibility never dispatches a call;
-- the v3.21 data-flow, control-availability, stage-capability, risk, and
+- the v3.21.1 research-workflow profile substrate is deterministic and
+  default-off: only explicit selection or the visible field-general fallback
+  is recorded, no manuscript inference or planner/pipeline hook is added, and
+  behavioral evidence remains `NOT_RUN`;
+- `ARS_INQUIRY_LEDGER=1` enables only the local opt-in branch-ledger alpha;
+  the adapter never sets it automatically, and author events, bounded
+  summaries, stale causes, path locks, and recovery receipts do not create
+  network authority or outcome claims;
+- the v3.21.1 data-flow, control-availability, stage-capability, risk, and
   governance transparency surfaces remain available with their deterministic
   validators and without becoming effectiveness or certification claims;
-- the v3.17 panel, degradation-registry, tools-allowlist, and pipeline-boundary
+- the v3.21.1 sealed promotion-bakeoff contracts and hermetic tests are
+  available, but direct `verify-tree` remains upstream-only because this
+  re-rooted snapshot lacks the complete canonical upstream Git history;
+- the panel, 21-row degradation registry, tools-allowlist, and pipeline-boundary
   validators remain available as vendored quality gates;
 - the upstream v3.18 SessionStart update reminder is vendored but not executed
   by the Codex hook pack;
@@ -171,4 +188,10 @@ python3 scripts/check_684_review_criteria_binding.py
 python3 scripts/check_human_subjects_output_contract.py
 python3 scripts/check_bibliographic_integrity_signals.py
 python3 scripts/check_cross_document_consistency_advisory_integration.py
+python3 -m pytest scripts/test_research_workflow_profile.py scripts/test_inquiry_branch_ledger.py
+python3 -m pytest scripts/test_check_data_access_level.py scripts/test_review_criteria_binding.py
+python3 -m pytest scripts/test_check_promotion_bakeoff_preregistration.py
 ```
+
+Do not run `check_promotion_bakeoff_preregistration.py verify-tree` from this
+vendored root; that command requires the complete canonical upstream history.

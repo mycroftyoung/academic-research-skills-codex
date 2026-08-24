@@ -131,6 +131,69 @@ def check_manifest() -> list[str]:
         template = SUITE_ROOT / workflow["agent_template"]
         _require(template.exists(), f"agent template missing for {name}: {workflow['agent_template']}")
     messages.append(f"{len(manifest['workflows'])} workflows have templates")
+
+    allowed_gate_kinds = {
+        "packaging",
+        "routing",
+        "agent-team",
+        "review",
+        "integrity",
+        "material-passport",
+        "evaluation",
+        "transparency",
+        "hooks",
+        "provenance",
+    }
+    allowed_parity = {"full", "near", "partial", "exploratory"}
+    local_runners = {"manifest", "router", "fixture", "topology-experiment", "hook-safety"}
+    gate_ids: set[str] = set()
+    active_upstream_paths: set[Path] = set()
+    for index, gate in enumerate(manifest.get("quality_gates", [])):
+        _require(isinstance(gate, dict), f"quality_gates[{index}] must be an object")
+        for key in ("id", "kind", "runner", "parity"):
+            _require(
+                isinstance(gate.get(key), str) and bool(gate[key]),
+                f"quality_gates[{index}] missing non-empty {key}",
+            )
+        gate_id = gate["id"]
+        _require(gate_id not in gate_ids, f"duplicate quality gate id: {gate_id}")
+        gate_ids.add(gate_id)
+        _require(gate["kind"] in allowed_gate_kinds, f"unknown quality gate kind: {gate['kind']}")
+        _require(gate["parity"] in allowed_parity, f"unknown quality gate parity: {gate['parity']}")
+        execution = gate.get("execution")
+        _require(
+            execution is None or execution == "hermetic",
+            f"quality gate {gate_id} has unsupported execution mode: {execution!r}",
+        )
+        runner = gate["runner"]
+        if runner.startswith("upstream:"):
+            runner_path = SUITE_ROOT / runner.removeprefix("upstream:")
+            _require(runner_path.is_file(), f"quality gate runner missing for {gate_id}: {runner}")
+            active_upstream_paths.add(runner_path.resolve())
+        else:
+            _require(runner in local_runners, f"unknown local quality gate runner: {runner}")
+    messages.append(f"{len(gate_ids)} quality gates have unique ids and resolvable runners")
+
+    inactive_paths: set[Path] = set()
+    for index, entry in enumerate(package.get("inactive_upstream_scripts", [])):
+        _require(
+            isinstance(entry, dict),
+            f"inactive_upstream_scripts[{index}] must be an object",
+        )
+        value = entry.get("path")
+        reason = entry.get("reason")
+        _require(isinstance(value, str) and bool(value), f"inactive entry {index} has no path")
+        _require(isinstance(reason, str) and bool(reason.strip()), f"inactive entry {value} has no reason")
+        inactive_path = _resolve_manifest_path(value)
+        _require(inactive_path.is_file(), f"inactive upstream path missing: {value}")
+        resolved = inactive_path.resolve()
+        _require(resolved not in inactive_paths, f"duplicate inactive upstream path: {value}")
+        _require(
+            resolved not in active_upstream_paths,
+            f"inactive upstream path is also registered as an active gate: {value}",
+        )
+        inactive_paths.add(resolved)
+    messages.append(f"{len(inactive_paths)} inactive upstream paths are unique and documented")
     return messages
 
 

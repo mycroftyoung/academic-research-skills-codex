@@ -15,7 +15,7 @@ description: >
   /ars-unmark-read, /ars-cache-invalidate, /ars-rebuttal-audit, and /ars-full. This skill vendors ARS role prompts,
   references, templates, and shared handoff schemas under ars/.
 metadata:
-  version: "0.1.26"
+  version: "0.1.27"
   upstream_suite: "academic-research-skills"
   codex_adapter: true
 allowed-tools: Read, Glob, Grep, WebSearch, Bash(uv *), Bash(python *), Bash(python3 *)
@@ -28,7 +28,7 @@ This is a Codex adapter for the ARS suite. The vendored ARS content lives under
 
 ## Versioning
 
-This Codex package is version `0.1.26`. The repo-root `VERSION`, this
+This Codex package is version `0.1.27`. The repo-root `VERSION`, this
 `SKILL.md` metadata version, and `manifest.json` `adapter_version` must match.
 Vendored ARS suite versions are tracked separately by source repository commit
 in `manifest.json`.
@@ -152,10 +152,13 @@ using them in Codex:
 | Claude, Claude Code, model-specific wording | Interpret as "the current Codex agent" unless the text is part of a disclosure template or historical example. |
 | `ARS_MODEL_TIERING=economy|quality-boost` | Unset remains the default and preserves current-model behavior. The upstream relative Opus/Sonnet tier names are not hard-mapped to Codex model ids. Apply tiering only when the active Codex runtime supports an explicit per-dispatch model override; otherwise announce a one-line no-op and keep every role on the active model. Use `ars/shared/model_tiering.md` and `ars/scripts/model_tiering_manifest.json` as the classification contract. |
 | `ARS_CROSS_MODEL`, `ARS_CROSS_MODEL_REASONING_EFFORT`, `ARS_OPENAI_COMPAT_BASE_URL`, `ARS_OPENAI_COMPAT_API_KEY` | Treat upstream secondary-model dispatch instructions as no-op unless the user explicitly asks for cross-model review. When explicitly enabled in this Codex package, follow `ars/shared/cross_model_verification.md`: identify the provider/model/id status/content class, obtain explicit user consent before any external upload, preserve risk-stratified sampling and blind-disagreement checkpoint rules, and call only the configured provider API. A dispatched owner emits the canonical `[CROSS-MODEL-HANDOFF v1]` envelope; the dispatching Codex context validates it, sends only the payload, applies the mechanical result routing, and returns judgment work to the owner. In reviewer `full` mode, the consented cross-model track swaps the existing Reviewer 2 seat rather than adding a reviewer; re-review runs the independent Priority-1 judge pass and records the Judge Record. Disclose single-family or fallback execution and never simulate either track through the active Codex model. |
-| `ARS_CROSS_MODEL_TRANSPORT=codex`, `scripts/cross_model_codex_transport.py` | This explicit selector is limited to contained, one-reference citation checks at Stage 2.5 / 4.5 through a ChatGPT-subscription Codex app-server. Require Codex CLI 0.147.0 or newer, `ARS_CROSS_MODEL`, the exact `Logged in using ChatGPT` attestation, and the normal provider/content/cost consent gate; do not accept caller-authored prompts or paths, widen the selector to reviewer/DA/calibration/re-review/handoff calls, or fall back automatically to an API. A result is accepted only after `turn/completed`, clean process exit, and stdout/stderr EOF; late forbidden or malformed events, drain timeout, nonzero exit, reader failure, or stderr overflow fail visibly. |
+| `ARS_CROSS_MODEL_TRANSPORT=codex`, `scripts/cross_model_codex_transport.py` | This explicit selector is limited to contained, one-reference citation checks at Stage 2.5 / 4.5 through a ChatGPT-subscription Codex app-server. Require Codex CLI 0.147.0 or newer, `ARS_CROSS_MODEL`, the exact `Logged in using ChatGPT` attestation on stdout or stderr, and the normal provider/content/cost consent gate; do not accept caller-authored prompts or paths, widen the selector to reviewer/DA/calibration/re-review/handoff calls, or fall back automatically to an API. The provider schema omits unsupported `uniqueItems`, but local validation still rejects duplicate sources. Keep `code_mode` disabled while allowing the bounded search host required by the standalone search tool; the closed event allowlist remains authoritative. A result is accepted only after `turn/completed`, clean process exit, and stdout/stderr EOF; late forbidden or malformed events, drain timeout, nonzero exit, reader failure, or stderr overflow fail visibly. |
 | `S2_API_KEY`, `OPENALEX_API_KEY`, `OPENALEX_POLITE_EMAIL`, `CROSSREF_POLITE_EMAIL` | These are optional upstream bibliographic lookup settings. Use them only when the user explicitly runs contamination-signal migration or programmatic reference verification; normal Codex routing does not require them. Never log credential-bearing query strings, and do not use browser retrieval to bypass API rate limits. |
 | `ARS_VERIFICATION_CACHE_PATH`, `ARS_CACHE_STALE_ADVISORY_DAYS`, `ARS_CACHE_REVALIDATE` | These configure the local SQLite citation-verification cache, the advisory-only stale-row threshold (default 30 days; `0` disables), and opt-in live re-validation. Preserve cached-by-default behavior when the programmatic citation gate is run. Live re-validation may call external bibliographic services, so use it only within the user's verification task and normal network/credential boundaries; an advisory never becomes a gate failure. |
 | Local PDF page anchors, `scripts/pdf_read_preflight.py` | Before trusting a `page` anchor from a locally read PDF, run the structural preflight once and carry its sidecar by `ref_slug`. Treat `FAIL` as positive read-integrity evidence against the page anchor and `UNAVAILABLE` as an explicit advisory; never convert a missing dependency, encrypted file, parser repair, or absent sidecar into `PASS`. The v3.20 `--classify-content` extension is opt-in and process-isolated, depends on the separately pinned `requirements-pdf-content-classifier.txt`, and emits only a `TEXT_AVAILABLE` / `OCR_RECOMMENDED` / `unavailable` advisory while the verdict scope remains `STRUCTURE_ONLY`; never turn it into an automatic OCR or anchor-acceptance gate. |
+| `scripts/research_workflow_profile.py` | Treat research-workflow profiles as a deterministic, default-off substrate, not an automatic router. Use only an explicit selection or the visible `field_general` fallback; never infer a research family from the manuscript. Corrections append receipts and mark prior-profile outputs stale without rewriting scholar-owned artifacts. |
+| `ARS_INQUIRY_LEDGER=1`, `scripts/inquiry_branch_ledger.py` | The inquiry branch ledger is an opt-in local alpha. When explicitly active, preserve author-owned append events, bounded summaries, project/path identity, locking, recovery, and individually visible stale causes. The flag authorizes no external model, API, or search call and yields no novelty, correctness, value, or usability claim. |
+| `scripts/check_promotion_bakeoff_preregistration.py` | Preserve the sealed commitment/reveal contracts and use the hermetic unit tests in this package. Do not run direct `verify-tree` against the re-rooted vendored subtree: it intentionally lacks the complete canonical upstream Git history required by that release-discipline check. A real future bakeoff must run from the upstream repository and still requires explicit consent for every live model call and cost. |
 | `fresh Claude Code session`, `Claude Code session` | Read as "a new Codex conversation". Material Passport reset semantics still apply; only the runtime changes. This rule covers `ars/academic-pipeline/WORKFLOW.md`, `ars/academic-pipeline/agents/pipeline_orchestrator_agent.md`, `ars/academic-pipeline/references/passport_as_reset_boundary.md`, `ars/experiment-agent/README.md`, `ars/experiment-agent/README.zh-TW.md`, and `ars/docs/PERFORMANCE.md`. |
 | `/ars-*` slash command, Claude plugin command | Treat `ars/commands/ars-*.md` as optional prompt recipes. Codex does not register slash commands from this package. |
 | SessionStart hook, SubagentStop hook, `hooks/hooks.json`, `scripts/ars_update_check.sh` | Treat as upstream Claude Code hook metadata only. The v3.18 update checker is vendored for traceability and tests but is not installed or executed by Codex; Codex package updates remain manual unless the user explicitly asks to port hook behavior. |
@@ -178,7 +181,7 @@ The canonical upstream network map remains available at
 `ars/docs/DATA_FLOWS.md`; this section is the Codex adapter override for when
 those flows are actually launched here.
 
-### ARS v3.21 Contract-Honesty Boundaries
+### ARS v3.21.1 Contract-Honesty Boundaries
 
 - Phase E evidence rows are deterministic, source-bound checkpoint artifacts.
   They preserve the existing citation verdict and gate, do not mark a source as
@@ -226,6 +229,18 @@ those flows are actually launched here.
 - Claim-standing eligibility is not dispatch authority. The query plan,
   affirmative consent receipt, freshness bindings, and transmission ledger
   remain mandatory, and the result is advisory even after a live call.
+- Research-workflow profile selection is explicit and manuscript-blind. The
+  `field_general` fallback leaves family-specific fit and authority unresolved;
+  corrections append receipts and stale prior outputs without silently
+  rewriting them.
+- The inquiry branch ledger is default-off and local. Even when
+  `ARS_INQUIRY_LEDGER=1`, branch adoption/disposition remains author-owned,
+  summaries are bounded deterministic views, and the ledger grants no network
+  or model authority.
+- Source-backed review criteria remain bound to the exact author-confirmed
+  discipline, venue, track, and contribution-type profile. The shipped proving
+  set demonstrates one profile and cannot be generalized into venue coverage,
+  current universal guidance, or expert validation.
 
 ## Security Boundaries
 
@@ -349,6 +364,15 @@ Use `ars/shared/` for cross-workflow contracts and quality gates:
 - `ars/shared/review_criteria_registry.json` and
   `ars/shared/references/review_criteria_consumer_protocol.md` bind one
   author-confirmed review target across formative, internal, and external review.
+- `ars/shared/research_workflow_profiles/field_general.json` plus the closed
+  `ars/shared/contracts/research_workflow/` schemas define the default-off
+  profile selection/correction substrate; `ars/shared/contracts/passport/inquiry_ledger_ref.schema.json`
+  and `ars/scripts/inquiry_branch_ledger.py` define the separately opt-in local
+  branch ledger.
+- `ars/shared/contracts/cross_model/promotion_bakeoff_sealed_*.schema.json`
+  defines future promotion-bakeoff commitment/reveal records. The associated
+  history-aware tree verifier is upstream-only in this re-rooted package, while
+  its hermetic contract tests remain available.
 - `ars/shared/bibliographic_integrity_signals.md` and
   `ars/shared/references/cross_document_consistency_advisory_protocol.md` keep
   bibliographic, retraction, preregistration, and cross-document signals

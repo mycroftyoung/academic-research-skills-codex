@@ -9,10 +9,20 @@ import re
 import sys
 from pathlib import Path
 
+if __package__:  # Package import in tests.
+    from ._markdown_lint_util import (
+        NON_RELATIVE_LINK_PREFIXES,
+        extract_link_targets,
+    )
+else:  # pragma: no cover - exercised by the CLI smoke path
+    from _markdown_lint_util import (
+        NON_RELATIVE_LINK_PREFIXES,
+        extract_link_targets,
+    )
+
 
 ROOT = Path(__file__).resolve().parents[1]
 ERRORS: list[str] = []
-MARKDOWN_LINK_RE = re.compile(r"\[[^\]]+\]\(([^)]+)\)")
 
 
 def codex_manifest() -> dict[str, object]:
@@ -94,10 +104,10 @@ def extract_section(text: str, start: str, end: str) -> str:
 def check_relative_markdown_links(rel_path: str) -> None:
     text = read(rel_path)
     doc_path = ROOT / rel_path
-    for raw_target in MARKDOWN_LINK_RE.findall(text):
-        if raw_target.startswith(("http://", "https://", "mailto:", "#")):
+    for raw_target in extract_link_targets(text):
+        if raw_target.startswith(NON_RELATIVE_LINK_PREFIXES):
             continue
-        target = raw_target.split("#", 1)[0]
+        target = raw_target.partition("#")[0]
         if not target:
             continue
         resolved = (doc_path.parent / target).resolve()
@@ -114,7 +124,7 @@ def check_relative_markdown_links(rel_path: str) -> None:
 def check_mode_registry() -> None:
     rel_path = "MODE_REGISTRY.md"
     text = read(rel_path)
-    expect_contains(rel_path, "Last updated: v3.21.0 (2026-08-18)")
+    expect_contains(rel_path, "Last updated: v3.21.1 (2026-08-24)")
     for heading in (
         "## deep-research (8 modes)",
         "## academic-paper (11 modes)",
@@ -131,7 +141,7 @@ def check_claude_md() -> None:
         return
     expect_contains(rel_path, "integrity check (Stage 2.5)")
     expect_contains(rel_path, "final integrity check (Stage 4.5)")
-    expect_contains(rel_path, "**Suite version**: 3.21.0")
+    expect_contains(rel_path, "**Suite version**: 3.21.1")
     for forbidden in (
         "6th independent reviewer",
         "Peer review gains 6th independent reviewer",
@@ -344,8 +354,8 @@ def check_readme_sections() -> None:
     rel_path = "README.md"
     text = read(rel_path)
 
-    expect_contains(rel_path, "version-v3.21.0-blue")
-    expect_contains(rel_path, "releases/tag/v3.21.0")
+    expect_contains(rel_path, "version-v3.21.1-blue")
+    expect_contains(rel_path, "releases/tag/v3.21.1")
     expect_contains(rel_path, "### v3.12.0 (2026-06-08)")
     expect_contains(rel_path, "### v3.11.1 (2026-06-06)")
     expect_contains(rel_path, "### v3.11.0 (2026-06-04)")
@@ -378,7 +388,7 @@ def check_readme_sections() -> None:
         "### Deep Research (v2.12.1)",
         "### Academic Paper (v3.3.1)",
         "### Academic Paper Reviewer (v1.11.1)",
-        "### Academic Pipeline (v3.21.0)",
+        "### Academic Pipeline (v3.21.1)",
     ):
         if heading not in text:
             fail(f"{rel_path}: missing heading {heading!r}")
@@ -427,8 +437,8 @@ def check_readme_ja_sections() -> None:
     rel_path = "README.ja-JP.md"
     text = read(rel_path)
 
-    expect_contains(rel_path, "version-v3.21.0-blue")
-    expect_contains(rel_path, "releases/tag/v3.21.0")
+    expect_contains(rel_path, "version-v3.21.1-blue")
+    expect_contains(rel_path, "releases/tag/v3.21.1")
     expect_contains(rel_path, "### v3.12.0 (2026-06-08)")
     expect_contains(rel_path, "### v3.11.1 (2026-06-06)")
     expect_contains(rel_path, "### v3.11.0 (2026-06-04)")
@@ -462,7 +472,7 @@ def check_readme_ja_sections() -> None:
         "### Deep Research（v2.12.1）",
         "### Academic Paper（v3.3.1）",
         "### Academic Paper Reviewer（v1.11.1）",
-        "### Academic Pipeline（v3.21.0）",
+        "### Academic Pipeline（v3.21.1）",
     ):
         if heading not in text:
             fail(f"{rel_path}: missing heading {heading!r}")
@@ -496,8 +506,8 @@ def check_readme_ko_sections() -> None:
     rel_path = "README.ko-KR.md"
     text = read(rel_path)
 
-    expect_contains(rel_path, "version-v3.21.0-blue")
-    expect_contains(rel_path, "releases/tag/v3.21.0")
+    expect_contains(rel_path, "version-v3.21.1-blue")
+    expect_contains(rel_path, "releases/tag/v3.21.1")
     expect_contains(rel_path, "### v3.18.0 (2026-07-18)")
     expect_contains(rel_path, "### v3.12.0 (2026-06-08)")
     expect_contains(rel_path, "### v3.11.1 (2026-06-06)")
@@ -532,7 +542,7 @@ def check_readme_ko_sections() -> None:
         "### Deep Research (v2.12.1)",
         "### Academic Paper (v3.3.1)",
         "### Academic Paper Reviewer (v1.11.1)",
-        "### Academic Pipeline (v3.21.0)",
+        "### Academic Pipeline (v3.21.1)",
     ):
         if heading not in text:
             fail(f"{rel_path}: missing heading {heading!r}")
@@ -557,7 +567,7 @@ ZH_README_CONFIGS = (
             "### Deep Research (v2.12.1)",
             "### Academic Paper (v3.3.1)",
             "### Academic Paper Reviewer (v1.11.1)",
-            "### Academic Pipeline (v3.21.0)",
+            "### Academic Pipeline (v3.21.1)",
         ),
         "paper_start": "#### Academic Paper（學術論文撰寫，11 種模式）",
         "reviewer_start": "#### Academic Paper Reviewer（論文審查，6 種模式）",
@@ -574,7 +584,7 @@ ZH_README_CONFIGS = (
             "### Deep Research (v2.12.1)",
             "### Academic Paper (v3.3.1)",
             "### Academic Paper Reviewer (v1.11.1)",
-            "### Academic Pipeline (v3.21.0)",
+            "### Academic Pipeline (v3.21.1)",
         ),
         "paper_start": "#### Academic Paper（学术论文撰写，11 种模式）",
         "reviewer_start": "#### Academic Paper Reviewer（论文审查，6 种模式）",
@@ -590,8 +600,8 @@ def check_readme_zh_sections() -> None:
         rel_path = config["rel_path"]
         text = read(rel_path)
 
-        expect_contains(rel_path, "version-v3.21.0-blue")
-        expect_contains(rel_path, "releases/tag/v3.21.0")
+        expect_contains(rel_path, "version-v3.21.1-blue")
+        expect_contains(rel_path, "releases/tag/v3.21.1")
         expect_contains(rel_path, "### v3.12.0（2026-06-08）")
         expect_contains(rel_path, "### v3.11.1（2026-06-06）")
         expect_contains(rel_path, "### v3.11.0（2026-06-04）")

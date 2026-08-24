@@ -1,14 +1,14 @@
 {
   "name": "academic-research-suite",
-  "adapter_version": "0.1.26",
+  "adapter_version": "0.1.27",
   "version_file": "VERSION",
   "generated_for": "codex",
-  "generated_date": "2026-08-18",
+  "generated_date": "2026-08-24",
   "source_repositories": [
     {
       "name": "academic-research-skills",
       "url": "https://github.com/Imbad0202/academic-research-skills.git",
-      "commit": "2b639c12ee4e7c694a32336cc59dc2616e0d89fe",
+      "commit": "127ff85e4bbfcdd10b95040537b6c6bd7ad17aeb",
       "included_paths": [
         "deep-research",
         "academic-paper",
@@ -79,6 +79,10 @@
     {
       "path": "skills/academic-research-suite/ars/scripts/check_distribution_surface_claims.py",
       "reason": "Validates upstream .claude-plugin distribution manifests and a Claude plugin agent-count claim that are intentionally absent and not semantically equivalent in the Codex package. The script remains vendored for traceability, while its pytest-manifest entry is inactive here."
+    },
+    {
+      "path": "skills/academic-research-suite/ars/scripts/check_promotion_bakeoff_preregistration.py",
+      "reason": "The direct verify-tree command requires the original upstream Git top-level, complete non-shallow history, and root-relative evals/bakeoff ancestry to prove seal/reveal chronology. A re-rooted Codex vendor snapshot cannot independently re-prove that history; the script is retained for traceability while its hermetic contract tests remain active."
     }
   ],
   "historical_artifacts": [
@@ -114,7 +118,7 @@
     "The Codex package carries scripts/codex_v3_6_7_block_baseline.json so first-time vendored trees can enforce v3.6.7 block byte-equivalence before Git history contains the upstream manifest.",
     "The Codex audit wrapper is patched to run on macOS stock Bash 3.2+ instead of requiring Bash 4+.",
     "Vendored test utilities keep macOS stock Python 3.9 compatibility where Codex local validation depends on it.",
-    "ARS v3.21.0 release content (peeled commit 2b639c12ee4e7c694a32336cc59dc2616e0d89fe, 2026-08-18) is the tracked upstream content; component versions are deep-research 2.12.1, academic-paper 3.3.1, academic-paper-reviewer 1.11.1, and academic-pipeline/suite 3.21.0. Nested upstream .github workflows, release-discipline tools, and root agents mirrors are preserved for traceability and upstream self-tests but are not repo-level CI or Codex entrypoints. Claude/plugin loader files under .claude, .claude-plugin, upstream skills aliases, and runtime log files remain intentionally excluded.",
+    "ARS v3.21.1 release content (peeled commit 127ff85e4bbfcdd10b95040537b6c6bd7ad17aeb, 2026-08-24) is the tracked upstream content; component versions are deep-research 2.12.1, academic-paper 3.3.1, academic-paper-reviewer 1.11.1, and academic-pipeline/suite 3.21.1. Nested upstream .github workflows, release-discipline tools, and root agents mirrors are preserved for traceability and upstream self-tests but are not repo-level CI or Codex entrypoints. Claude/plugin loader files under .claude, .claude-plugin, upstream skills aliases, and runtime log files remain intentionally excluded.",
     "ARS_MODEL_TIERING is classification-compatible but remains advisory in Codex unless the runtime exposes explicit per-dispatch model selection; unset and unsupported cases keep the active model.",
     "The upstream model-tiering validator excludes the separately vendored experiment-agent tree from its frozen 39-agent ARS classification sweep.",
     "Korean intent triggers are propagated into the root Codex router and optional full-runtime planner because vendored WORKFLOW.md frontmatter is not independently registered.",
@@ -148,6 +152,11 @@
     "The v3.20.1 claim-standing stance runner/renderer and blind within-session ideation assignment gate are bounded evaluation infrastructure. Their receipts preserve consent, no-call, provenance, and unmeasured boundaries rather than certifying correctness or diversity.",
     "The v3.21 data-flow map, control-availability matrix, stage-capability matrix, risk register, governance statement, and audit record are preserved as transparency and traceability surfaces; their evidence labels and residual gaps are not promoted into effectiveness or certification claims.",
     "The v3.21 claim-standing pipeline wiring remains a user-requested advisory after an eligible Stage 2.5/4.5 Claim Registry row. Eligibility never dispatches work, affirmative plan-bound consent is mandatory, and absent, cancelled, invalidated, or stale consent produces no external call.",
+    "The v3.21.1 research-workflow profile substrate is deterministic and default-off: explicit selection or a visible field_general fallback is recorded without manuscript inference, corrections append receipts and mark prior outputs stale without rewriting them, and no pipeline hook or family-specific profile is implied.",
+    "The v3.21.1 inquiry branch ledger remains an opt-in alpha behind ARS_INQUIRY_LEDGER=1. Its append-only author events, bounded summaries, passport pointer, path confinement, locking, recovery journal, and stale-cause accounting are preserved; enabling it does not authorize a network or model call and does not establish novelty, correctness, or usability.",
+    "The v3.21.1 Codex subscription citation transport accepts the exact ChatGPT login attestation from stdout or stderr, omits provider-rejected uniqueItems while preserving local duplicate-source refusal, and keeps the standalone search host available while the closed event grammar and citation-only consent boundary remain fail-closed.",
+    "The v3.21.1 sealed promotion-bakeoff contracts and hermetic tests are vendored, but direct verify-tree execution is inactive because this re-rooted package does not contain complete upstream Git history. The retained 2026-08-19 bakeoff evidence remains a measurement artifact, not permission for live calls or a first-party API-route validation claim.",
+    "The v3.21.1 source-backed review-criteria proving set preserves exact-profile author confirmation, official-source receipts, immutable guidance provenance, three-consumer digest binding, and unresolved/advisory states; it demonstrates one architecture slice rather than venue or discipline coverage.",
     "Codex bibliographic network routing is defined by the root SKILL.md: ordinary discovery and inline ingest use Codex browsing, the four Python resolver clients require an explicit programmatic-verification request, and invoking ars-full alone does not launch them. This is an intentional adapter boundary, not an upstream runtime claim.",
     "The separately vendored experiment-agent tree tracks its upstream v1.1.0 (session resume for study_manager_agent, study-state protocol and templates); its .claude/ and .github/ upstream dev files remain excluded and its entry file keeps the WORKFLOW.md rename with the Codex data_access_level/task_type frontmatter overlay."
   ]

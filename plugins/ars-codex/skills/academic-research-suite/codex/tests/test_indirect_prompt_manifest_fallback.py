@@ -10,7 +10,7 @@ import pytest
 
 SUITE_ROOT = Path(__file__).resolve().parents[2]
 RUNNER_PATH = SUITE_ROOT / "ars" / "scripts" / "run_indirect_prompt_injection_no_call.py"
-VALID_COMMIT = "2b639c12ee4e7c694a32336cc59dc2616e0d89fe"
+VALID_COMMIT = "127ff85e4bbfcdd10b95040537b6c6bd7ad17aeb"
 
 
 def _load_runner():
@@ -33,6 +33,18 @@ def _write_manifest(vendor_root: Path, payload: object) -> None:
     (vendor_root.parent / "manifest.json").write_text(
         json.dumps(payload), encoding="utf-8"
     )
+
+
+def test_valid_commit_matches_package_manifest_source_lock() -> None:
+    manifest = json.loads((SUITE_ROOT / "manifest.json").read_text(encoding="utf-8"))
+    ars_sources = [
+        source
+        for source in manifest["source_repositories"]
+        if source.get("name") == "academic-research-skills"
+    ]
+
+    assert len(ars_sources) == 1
+    assert ars_sources[0]["commit"] == VALID_COMMIT
 
 
 def test_no_git_vendor_resolves_exact_manifest_source_lock(

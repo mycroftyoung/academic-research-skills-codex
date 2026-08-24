@@ -1,6 +1,6 @@
 # ARS-Codex
 
-[![Version](https://img.shields.io/badge/version-v0.1.26-blue)](VERSION)
+[![Version](https://img.shields.io/badge/version-v0.1.27-blue)](VERSION)
 [![License: CC BY-NC 4.0](https://img.shields.io/badge/license-CC%20BY--NC%204.0-lightgrey)](https://creativecommons.org/licenses/by-nc/4.0/)
 [![Sponsor](https://img.shields.io/badge/sponsor-Buy%20Me%20a%20Coffee-orange?logo=buy-me-a-coffee)](https://buymeacoffee.com/crucify020v)
 
@@ -46,17 +46,18 @@ skills/academic-research-suite/
 
 ## 版本管理
 
-本 ARS-Codex 打包版本为 `0.1.26`。repo 根目录的 `VERSION` 文件、`skills/academic-research-suite/SKILL.md` 中的元数据版本，以及 `skills/academic-research-suite/manifest.json` 中的 `adapter_version` 独立追踪 Codex 打包版本，与内嵌的 ARS 套件版本无关。内嵌的上游版本通过 commit 记录在 `manifest.source_repositories[]` 中。
+本 ARS-Codex 打包版本为 `0.1.27`。repo 根目录的 `VERSION` 文件、`skills/academic-research-suite/SKILL.md` 中的元数据版本，以及 `skills/academic-research-suite/manifest.json` 中的 `adapter_version` 独立追踪 Codex 打包版本，与内嵌的 ARS 套件版本无关。内嵌的上游版本通过 commit 记录在 `manifest.source_repositories[]` 中。
 
 打包层面的变更汇总在 [`CHANGELOG.md`](CHANGELOG.md) 中。
 
-当前内嵌的 ARS 源码追踪至已签署的 `v3.21.0` 发行版：
-`Imbad0202/academic-research-skills@2b639c12ee4e7c694a32336cc59dc2616e0d89fe`
-（2026-08-18）。该版本加入 canonical data-flow map、各通道
-control-availability matrix、stage-capability matrix、risk register、governance
-statement，以及有界 claim-standing probe 的 consent／freshness／transmission
-完整 wiring。该 probe 仍须由用户请求且仅提供 advisory；eligibility 不会授权
-外部调用。既有的引用、完整性、最小权限、degradation 与 transport 防护仍完整保留。
+当前内嵌的 ARS 源码追踪至已签署的 `v3.21.1` 发行版：
+`Imbad0202/academic-research-skills@127ff85e4bbfcdd10b95040537b6c6bd7ad17aeb`
+（2026-08-24）。该版本新增默认关闭的 deterministic research-workflow profile、
+opt-in inquiry branch ledger alpha、未来 model-promotion bakeoff 的 sealed
+preregistration，以及 source-backed review-criteria proving set，并修复 Codex CLI
+0.147.0 下的 subscription citation transport。这些机制仍保持有界并须明确启用：
+field-general fallback 不推断研究家族、启用 ledger 不授权外部调用，transport
+仍须取得同意。
 
 上游嵌套的 `.github/` 工作流和根级 `agents/` 镜像保留用于可追溯性和自测，
 但不是仓库级 CI 或 Codex 入口；`.claude/` 与 `.claude-plugin/` 下的
@@ -295,9 +296,9 @@ ARS 最初是为 Claude Code 编写的。在本 Codex 打包版本中：
 - 上游对"新 Claude Code 会话"的引用在本包中等同于新的 Codex 对话；Material Passport 重置语义仍然适用。
 - 如果引用、来源、统计数据或期刊政策无法验证，Codex 应将其标记为未验证，而非编造支撑依据。
 
-### ARS v3.21 功能对等
+### ARS v3.21.1 功能对等
 
-本包旨在 Codex 具有等效概念的地方，提供与上游 ARS `v3.21.0`（`2b639c12ee4e7c694a32336cc59dc2616e0d89fe`）相同的用户侧 workflow 内容。
+本包旨在 Codex 具有等效概念的地方，提供与上游 ARS `v3.21.1`（`127ff85e4bbfcdd10b95040537b6c6bd7ad17aeb`）相同的用户侧 workflow 内容。
 
 | 上游 ARS 功能 | Codex 打包版本行为 |
 |---|---|

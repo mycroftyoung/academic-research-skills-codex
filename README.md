@@ -1,6 +1,6 @@
 # ARS-Codex
 
-[![Version](https://img.shields.io/badge/version-v0.1.26-blue)](VERSION)
+[![Version](https://img.shields.io/badge/version-v0.1.27-blue)](VERSION)
 [![License: CC BY-NC 4.0](https://img.shields.io/badge/license-CC%20BY--NC%204.0-lightgrey)](https://creativecommons.org/licenses/by-nc/4.0/)
 [![Sponsor](https://img.shields.io/badge/sponsor-Buy%20Me%20a%20Coffee-orange?logo=buy-me-a-coffee)](https://buymeacoffee.com/crucify020v)
 
@@ -51,7 +51,7 @@ Use this repo when you want the Codex-native single-suite skill.
 
 ## Versioning
 
-This ARS-Codex package is version `0.1.26`. The repo-root `VERSION` file,
+This ARS-Codex package is version `0.1.27`. The repo-root `VERSION` file,
 `skills/academic-research-suite/SKILL.md` metadata version, and
 `skills/academic-research-suite/manifest.json` `adapter_version` track the
 Codex package version independently of the vendored ARS suite. Vendored upstream
@@ -59,14 +59,15 @@ versions are recorded by commit in `manifest.source_repositories[]`.
 
 Package-level changes are summarized in [`CHANGELOG.md`](CHANGELOG.md).
 
-The vendored ARS source currently tracks the signed release `v3.21.0` at
-`Imbad0202/academic-research-skills@2b639c12ee4e7c694a32336cc59dc2616e0d89fe`
-(2026-08-18). This release adds the canonical data-flow map, per-channel
-control-availability matrix, stage-capability matrix, risk register, governance
-statement, and complete consent/freshness/transmission wiring for the bounded
-claim-standing probe. The probe remains user-requested and advisory; its
-eligibility signal never authorizes an external call. Earlier citation,
-integrity, least-privilege, degradation, and transport safeguards remain intact.
+The vendored ARS source currently tracks the signed release `v3.21.1` at
+`Imbad0202/academic-research-skills@127ff85e4bbfcdd10b95040537b6c6bd7ad17aeb`
+(2026-08-24). This release adds default-off deterministic research-workflow
+profiles, the opt-in inquiry branch ledger alpha, sealed preregistration for
+future model-promotion bakeoffs, and a source-backed review-criteria proving
+set. It also repairs the contained Codex subscription citation transport for
+Codex CLI 0.147.0 behavior. The new substrates remain bounded and explicit:
+the field-general fallback does not infer a research family, ledger activation
+does not authorize external calls, and transport still requires consent.
 Nested upstream `.github/` workflows and root `agents/` mirrors are preserved
 for traceability and self-tests, but are not repo-level CI or Codex entrypoints;
 Claude/plugin loader files under `.claude/` and `.claude-plugin/` remain
@@ -372,10 +373,10 @@ ARS was originally written for Claude Code. In this Codex package:
 - If a citation, source, statistic, or journal policy cannot be verified, Codex
   should mark it as unverified rather than invent support.
 
-### ARS v3.21 Parity
+### ARS v3.21.1 Parity
 
 This package aims for the same user-facing workflow content as upstream ARS
-`v3.21.0` at `2b639c12ee4e7c694a32336cc59dc2616e0d89fe` where Codex has an
+`v3.21.1` at `127ff85e4bbfcdd10b95040537b6c6bd7ad17aeb` where Codex has an
 equivalent concept.
 
 Bibliographic network behavior is intentionally explicit at the Codex adapter
@@ -402,11 +403,15 @@ boundary:
 | Canonical cross-model handoff envelope | Dispatcher validates the envelope, transports only the payload after consent, and follows the closed result-routing contract |
 | Contained Codex citation transport | Opt-in, consent-gated transport is limited to narrow citation-integrity checks; it is inactive unless explicitly configured and requested |
 | Evidence-bound review and revision | Durable evidence rows, confirmed review criteria, non-ranking roadmaps, author adjudication, and revision-evidence bundles are preserved |
+| Research-workflow profiles | Default-off deterministic selection with a visible field-general fallback; no research family is inferred from manuscript content, and corrections stale rather than rewrite prior artifacts |
+| Inquiry branch ledger | `ARS_INQUIRY_LEDGER=1` enables the local opt-in alpha; author events, bounded summaries, path/lock/recovery safeguards, and stale causes are preserved without granting network authority |
+| Sealed model-promotion bakeoffs | Commitment/reveal contracts and hermetic tests are vendored; the history-dependent tree verifier remains upstream-only because the re-rooted subtree has no complete upstream Git history |
 | Socratic research-question authorship | Non-convergence never triggers system-authored candidate questions; explicit user request is required to leave non-generation mode |
 | Categorical reviewer judgement and panel provenance | Live packages remain `NOT_CALIBRATED`; no numeric score, weight, aggregate, ranking, or binary independence claim is fabricated |
 | Review criteria and human-subjects authority | Venue/criteria and ethics/data-protection authority require explicit user confirmation; Codex does not infer or simulate approval |
 | Optional PDF content classifier | The sandboxed classifier is an opt-in advisory dependency and cannot override structural PDF preflight results |
 | Cross-model Reviewer 2 and re-review judge tracks | Available only with explicit provider configuration and content consent; the fixed seat, Judge Record, single-family disclosure, and fallback disclosure are preserved |
+| Source-backed review-criteria proving set | Exact-profile author confirmation, source receipts, and three-consumer digest binding are preserved; one proving profile is not venue or discipline coverage |
 | Cache staleness advisory and live re-validation | Local cache remains the default; stale rows are advisory-only and `ARS_CACHE_REVALIDATE=1` opts into live bibliographic checks |
 | Data-flow and capability transparency | The v3.21 network map, control-availability matrix, stage-capability matrix, risk register, and governance statement are vendored without promoting evidence labels into effectiveness or certification claims |
 | Claim-standing pipeline wiring | Eligibility only offers the advisory view; query-plan binding, explicit consent, freshness validation, and transmission accounting remain mandatory before any external call |

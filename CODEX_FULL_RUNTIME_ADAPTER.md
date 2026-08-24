@@ -71,15 +71,18 @@ python3 skills/academic-research-suite/codex/scripts/ars_codex_full_runtime.py -
   "ars-reviewer full review for this manuscript."
 ```
 
-## ARS v3.21 Runtime Boundaries
+## ARS v3.21.1 Runtime Boundaries
 
 - `ARS_CROSS_MODEL_TRANSPORT=codex` is an explicit, contained
   ChatGPT-subscription transport for one-reference citation checks at Stage 2.5
   / 4.5 only. It requires Codex CLI 0.147.0 or newer, `ARS_CROSS_MODEL`, the
-  exact `Logged in using ChatGPT` attestation, and explicit
-  provider/content/cost consent, accepts no caller-authored prompt or path, and
-  never falls back automatically to an API or expands to reviewer, DA,
-  calibration, re-review, checkpoint, or handoff calls.
+  exact `Logged in using ChatGPT` attestation on stdout or stderr, and explicit
+  provider/content/cost consent. The provider schema omits unsupported
+  `uniqueItems` while the local duplicate-source guard remains fail-closed;
+  `code_mode` stays disabled, but the bounded host required by standalone search
+  remains available under the closed event grammar. The transport accepts no
+  caller-authored prompt or path and never falls back automatically to an API
+  or expands to reviewer, DA, calibration, re-review, checkpoint, or handoff calls.
 - The citation transport does not accept a result at `turn/completed` alone.
   It closes stdin and requires clean process exit plus stdout/stderr EOF within
   the bounded drain; late forbidden or malformed events, drain timeout,
@@ -106,6 +109,18 @@ python3 skills/academic-research-suite/codex/scripts/ars_codex_full_runtime.py -
   carriers remain advisories. The adapter must not infer author choices,
   venues, institutional approval, legal advice, document agreement, or a clean
   integrity result from these artifacts.
+- Research-workflow profiles are a deterministic, default-off substrate. The
+  adapter records only an explicit selection or the visible `field_general`
+  fallback, performs no manuscript-family inference, and adds no automatic
+  planner or pipeline hook; behavioral evidence remains `NOT_RUN`.
+- `ARS_INQUIRY_LEDGER=1` enables only the local opt-in alpha. The adapter never
+  sets it automatically, and its author events, bounded checkpoint summaries,
+  stale-cause accounting, locks, and recovery receipts grant no external call
+  authority or outcome claim.
+- The sealed promotion-bakeoff schemas and hermetic lifecycle tests are
+  vendored. Direct `verify-tree` remains upstream-only because the re-rooted
+  snapshot lacks the complete canonical upstream Git history required to prove
+  seal/reveal chronology.
 
 ## Verification
 
@@ -119,6 +134,12 @@ Run adapter tests:
 
 ```bash
 python3 -m pytest skills/academic-research-suite/codex/tests -q
+python3 -m pytest \
+  skills/academic-research-suite/ars/scripts/test_research_workflow_profile.py \
+  skills/academic-research-suite/ars/scripts/test_inquiry_branch_ledger.py \
+  skills/academic-research-suite/ars/scripts/test_check_data_access_level.py \
+  skills/academic-research-suite/ars/scripts/test_review_criteria_binding.py \
+  skills/academic-research-suite/ars/scripts/test_check_promotion_bakeoff_preregistration.py
 ```
 
 ## Known Degradations
@@ -131,7 +152,7 @@ python3 -m pytest skills/academic-research-suite/codex/tests -q
   slash-command registration and hook behavior are not reproduced.
 - Hook installation is manual and disabled by default.
 - The heavy `ars-full`, `ars-reviewer`, and `ars-revision-coach` routes have no
-  v3.21 model frontmatter and inherit the active Codex session model. Light
+  v3.21.1 model frontmatter and inherit the active Codex session model. Light
   routes retain upstream `sonnet` metadata, but the adapter does not force a
   Codex model unless the user or runtime explicitly overrides it.
 - External cross-model verification is never silently simulated.
@@ -140,6 +161,8 @@ python3 -m pytest skills/academic-research-suite/codex/tests -q
   provider-API fallback.
 - Optional PDF content classification needs its separate dependency and remains
   an advisory; absence cannot be promoted to structural `PASS`.
-- Deterministic v3.21 evidence, review, revision, human-subjects,
+- Deterministic v3.21.1 evidence, review, revision, human-subjects,
   bibliographic, and preregistration artifacts do not substitute for author,
   reviewer, institutional, legal, or domain-expert judgment.
+- The vendored tree cannot independently re-prove upstream promotion-bakeoff
+  seal/reveal chronology; only the hermetic contract tests are active here.

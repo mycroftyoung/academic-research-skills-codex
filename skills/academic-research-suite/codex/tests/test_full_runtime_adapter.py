@@ -483,6 +483,75 @@ def test_v320_manifest_registers_only_hermetic_runtime_contract_gates() -> None:
     assert "run_review_criteria_constructive_value.py" not in all_runners
 
 
+def test_v3211_manifest_registers_bounded_hermetic_contracts() -> None:
+    manifest = json.loads(
+        (CODEX_ROOT / "full-runtime-manifest.json").read_text(encoding="utf-8")
+    )
+    options = manifest["runtime_options"]
+
+    transport = options["cross_model_transport"]
+    assert transport["codex_login_attestation_streams"] == ["stdout", "stderr"]
+    assert transport["codex_provider_schema_omits_unique_items"] is True
+    assert transport["codex_local_duplicate_source_refusal"] is True
+    assert transport["codex_code_mode_disabled"] is True
+    assert transport["codex_search_host_available"] is True
+
+    profile = options["research_workflow_profile"]
+    assert profile["mode"] == "default_off_deterministic_substrate"
+    assert profile["activation"] == "explicit_selection_or_direct_invocation"
+    assert profile["manuscript_inference"] is False
+    assert profile["pipeline_hook"] is False
+    assert profile["behavioral_evidence"] == "NOT_RUN"
+    assert (SUITE_ROOT / profile["fallback_profile"]).is_file()
+
+    ledger = options["inquiry_branch_ledger"]
+    assert ledger["environment"] == "ARS_INQUIRY_LEDGER"
+    assert ledger["enabled_value"] == "1"
+    assert ledger["default_enabled"] is False
+    assert ledger["execution"] == "local_offline"
+    assert ledger["publication_threshold"] == "second_branch"
+    assert ledger["external_call_authority"] is False
+    assert ledger["outcome_claims"] == "none"
+
+    gates = {
+        gate["id"]: gate
+        for gate in manifest["quality_gates"]
+        if gate["id"].startswith("v3211_")
+    }
+    required = {
+        "v3211_research_workflow_profile",
+        "v3211_inquiry_branch_ledger",
+        "v3211_data_access_level",
+        "v3211_review_criteria_source_proving_set",
+        "v3211_promotion_bakeoff_preregistration_contract",
+    }
+    assert required == set(gates)
+    for gate in gates.values():
+        assert gate["execution"] == "hermetic"
+
+    for gate in manifest["quality_gates"]:
+        runner = gate["runner"]
+        if runner.startswith("upstream:"):
+            assert (SUITE_ROOT / runner.removeprefix("upstream:")).is_file(), runner
+
+    active_runners = {gate["runner"] for gate in manifest["quality_gates"]}
+    assert (
+        "upstream:ars/scripts/check_promotion_bakeoff_preregistration.py"
+        not in active_runners
+    )
+    assert not any("cross_model_smoke_test_codex.sh" in runner for runner in active_runners)
+    assert not any("run_review_criteria_constructive_value.py" in runner for runner in active_runners)
+    assert not any("run_fleet.py" in runner for runner in active_runners)
+    assert not any("alternative_explanation_register" in runner for runner in active_runners)
+
+    package = json.loads((SUITE_ROOT / "manifest.json").read_text(encoding="utf-8"))
+    inactive_paths = {item["path"] for item in package["inactive_upstream_scripts"]}
+    assert (
+        "skills/academic-research-suite/ars/scripts/check_promotion_bakeoff_preregistration.py"
+        in inactive_paths
+    )
+
+
 def test_quality_gates_all_pass() -> None:
     result = subprocess.run(
         [sys.executable, str(GATES_PATH), "all", "--json"],
