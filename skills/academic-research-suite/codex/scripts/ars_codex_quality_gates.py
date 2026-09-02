@@ -68,6 +68,148 @@ def _require(condition: bool, message: str) -> None:
         raise GateFailure(message)
 
 
+_WORKFLOW_NAME_RE = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*")
+_ROUTER_WORKFLOW_RE = re.compile(
+    r"`ars/([a-z0-9]+(?:-[a-z0-9]+)*)/WORKFLOW\.md`"
+)
+_REQUIRED_WORKFLOWS = frozenset(
+    {
+        "deep-research",
+        "academic-paper",
+        "academic-paper-reviewer",
+        "academic-pipeline",
+        "experiment-agent",
+    }
+)
+
+
+def _top_level_source_paths(source: object) -> set[str]:
+    """Return canonical one-segment paths declared by one source lock."""
+    if not isinstance(source, dict):
+        return set()
+    included_paths = source.get("included_paths")
+    if not isinstance(included_paths, list):
+        return set()
+    names: set[str] = set()
+    for value in included_paths:
+        if not isinstance(value, str):
+            continue
+        path = Path(value)
+        if len(path.parts) == 1 and _WORKFLOW_NAME_RE.fullmatch(path.name):
+            names.add(path.name)
+    return names
+
+
+def _external_workflow_names(package: dict[str, Any]) -> set[str]:
+    """Return separately sourced top-level names, excluding primary overlaps.
+
+    A secondary source such as ``experiment-agent`` may live beside the four
+    canonical ARS workflows without becoming part of the ARS inventory parity
+    contract. A name also declared by the primary ARS source remains core: a
+    secondary lock must never make a canonical workflow disappear from this
+    gate.
+    """
+    sources = package.get("source_repositories")
+    _require(isinstance(sources, list), "package manifest source_repositories must be a list")
+    primary: set[str] = set()
+    secondary: set[str] = set()
+    for source in sources:
+        if not isinstance(source, dict):
+            continue
+        names = _top_level_source_paths(source)
+        if source.get("name") == "academic-research-skills":
+            primary.update(names)
+        else:
+            secondary.update(names)
+    return secondary - primary
+
+
+def _root_router_workflow_names(root_skill: Path) -> set[str]:
+    """Read workflow names from the root router table, not incidental prose."""
+    text = root_skill.read_text(encoding="utf-8")
+    section = re.search(
+        r"(?ms)^## Workflow Router\s*$\n(?P<body>.*?)(?=^##\s|\Z)",
+        text,
+    )
+    _require(bool(section), "root SKILL.md is missing the Workflow Router section")
+    table: list[str] = []
+    for line in section.group("body").splitlines():
+        if line.lstrip().startswith("|"):
+            table.append(line)
+        elif table:
+            break
+    _require(bool(table), "root SKILL.md Workflow Router table is missing")
+
+    def cells(line: str) -> list[str]:
+        stripped = line.strip()
+        _require(
+            stripped.startswith("|") and stripped.endswith("|"),
+            f"root SKILL.md Workflow Router has malformed table row: {line!r}",
+        )
+        return [cell.strip() for cell in stripped[1:-1].split("|")]
+
+    _require(
+        len(table) >= 3,
+        "root SKILL.md Workflow Router table needs a header, divider, and workflow row",
+    )
+    headers = cells(table[0])
+    expected_headers = ("User intent", "Read first")
+    _require(
+        all(headers.count(header) == 1 for header in expected_headers),
+        "root SKILL.md Workflow Router table headers must include exactly one "
+        f"'User intent' and 'Read first': {headers}",
+    )
+    divider = cells(table[1])
+    _require(
+        len(divider) == len(headers)
+        and all(re.fullmatch(r":?-{3,}:?", cell.replace(" ", "")) for cell in divider),
+        "root SKILL.md Workflow Router table divider does not match its headers",
+    )
+    read_first_index = headers.index("Read first")
+    matches: list[str] = []
+    for row_number, line in enumerate(table[2:], start=1):
+        row = cells(line)
+        _require(
+            len(row) == len(headers),
+            f"root SKILL.md Workflow Router row {row_number} has {len(row)} columns; "
+            f"expected {len(headers)}",
+        )
+        row_matches = _ROUTER_WORKFLOW_RE.findall(row[read_first_index])
+        _require(
+            len(row_matches) == 1,
+            f"root SKILL.md Workflow Router row {row_number} Read first cell must "
+            "contain exactly one ars/<workflow>/WORKFLOW.md path",
+        )
+        matches.extend(row_matches)
+    duplicates = sorted(name for name in set(matches) if matches.count(name) > 1)
+    _require(not duplicates, f"root SKILL.md Workflow Router has duplicate workflows: {duplicates}")
+    return set(matches)
+
+
+def _runtime_workflow_names(manifest: dict[str, Any]) -> set[str]:
+    workflows = manifest.get("workflows")
+    _require(isinstance(workflows, dict), "full-runtime manifest workflows must be an object")
+    invalid = sorted(
+        str(name)
+        for name in workflows
+        if not isinstance(name, str) or _WORKFLOW_NAME_RE.fullmatch(name) is None
+    )
+    _require(not invalid, f"full-runtime manifest has invalid workflow names: {invalid}")
+    return set(workflows)
+
+
+def _require_inventory_equal(
+    disk: set[str], other: set[str], surface: str
+) -> None:
+    missing = sorted(disk - other)
+    extra = sorted(other - disk)
+    _require(
+        not missing and not extra,
+        f"core workflow inventory mismatch for {surface}: "
+        f"missing_from_{surface}={missing}, extra_in_{surface}={extra}",
+    )
+
+
 def check_manifest() -> list[str]:
     manifest = _json(FULL_RUNTIME_MANIFEST)
     messages = ["full-runtime manifest parses as JSON"]
@@ -203,10 +345,54 @@ def check_single_root_skill() -> list[str]:
     vendored_skill_files = sorted(ARS_ROOT.rglob("SKILL.md"))
     _require(not vendored_skill_files, "vendored workflow SKILL.md files would expose duplicate Codex skills: " + ", ".join(str(p) for p in vendored_skill_files))
     workflow_files = sorted(ARS_ROOT.glob("*/WORKFLOW.md"))
-    workflow_names = {path.parent.name for path in workflow_files}
-    expected = {"deep-research", "academic-paper", "academic-paper-reviewer", "academic-pipeline", "experiment-agent"}
-    _require(expected.issubset(workflow_names), f"missing WORKFLOW.md files: {sorted(expected - workflow_names)}")
-    return ["single root skill is the only Codex-discoverable skill", f"{len(workflow_files)} vendored workflow entry files use WORKFLOW.md"]
+    disk_names = {path.parent.name for path in workflow_files}
+    router_names = _root_router_workflow_names(root_skill)
+    runtime_names = _runtime_workflow_names(_json(FULL_RUNTIME_MANIFEST))
+    external_names = _external_workflow_names(_json(PACKAGE_MANIFEST))
+
+    for surface, names in (
+        ("root router", router_names),
+        ("full-runtime manifest", runtime_names),
+    ):
+        dangling = sorted(names - disk_names)
+        _require(
+            not dangling,
+            f"{surface} lists workflows without WORKFLOW.md on disk: {dangling}",
+        )
+
+    for surface, names in (
+        ("disk", disk_names),
+        ("root router", router_names),
+        ("full-runtime manifest", runtime_names),
+    ):
+        missing_required = sorted(_REQUIRED_WORKFLOWS - names)
+        _require(
+            not missing_required,
+            f"{surface} is missing required workflows: {missing_required}",
+        )
+
+    router_external = router_names & external_names
+    runtime_external = runtime_names & external_names
+    _require(
+        router_external == runtime_external,
+        "separately sourced workflow inventory mismatch between root router and "
+        "full-runtime manifest: "
+        f"missing_from_root_router={sorted(runtime_external - router_external)}, "
+        f"missing_from_full_runtime_manifest={sorted(router_external - runtime_external)}",
+    )
+
+    disk_core = disk_names - external_names
+    _require_inventory_equal(disk_core, router_names - external_names, "root_router")
+    _require_inventory_equal(
+        disk_core,
+        runtime_names - external_names,
+        "full_runtime_manifest",
+    )
+    return [
+        "single root skill is the only Codex-discoverable skill",
+        f"{len(disk_core)} core workflows match disk, root router, and full-runtime manifest",
+        f"{len(disk_names & external_names)} separately sourced workflow(s) excluded from core parity",
+    ]
 
 
 def check_hook_safety() -> list[str]:

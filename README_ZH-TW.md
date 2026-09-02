@@ -1,6 +1,6 @@
 # ARS-Codex
 
-[![Version](https://img.shields.io/badge/version-v0.1.27-blue)](VERSION)
+[![Version](https://img.shields.io/badge/version-v0.1.28-blue)](VERSION)
 [![License: CC BY-NC 4.0](https://img.shields.io/badge/license-CC%20BY--NC%204.0-lightgrey)](https://creativecommons.org/licenses/by-nc/4.0/)
 [![Sponsor](https://img.shields.io/badge/sponsor-Buy%20Me%20a%20Coffee-orange?logo=buy-me-a-coffee)](https://buymeacoffee.com/crucify020v)
 
@@ -43,7 +43,7 @@ skills/academic-research-suite/
 
 ## 版本控制
 
-此 ARS-Codex 套件版本為 `0.1.27`。倉庫根目錄的 `VERSION` 檔案、
+此 ARS-Codex 套件版本為 `0.1.28`。倉庫根目錄的 `VERSION` 檔案、
 `skills/academic-research-suite/SKILL.md` 的 metadata 版本，
 以及 `skills/academic-research-suite/manifest.json` 的 `adapter_version`
 獨立追蹤 Codex 套件版本，與內嵌的 ARS 套件版本分開管理。
@@ -51,14 +51,13 @@ skills/academic-research-suite/
 
 套件層級的變更摘要記錄在 [`CHANGELOG.md`](CHANGELOG.md) 中。
 
-目前內嵌的 ARS 原始碼追蹤至已簽署的 `v3.21.1` 發行版：
-`Imbad0202/academic-research-skills@127ff85e4bbfcdd10b95040537b6c6bd7ad17aeb`
-（2026-08-24）。此版本新增預設關閉的 deterministic research-workflow profile、
-opt-in inquiry branch ledger alpha、未來 model-promotion bakeoff 的 sealed
-preregistration，以及 source-backed review-criteria proving set，並修復 Codex CLI
-0.147.0 下的 subscription citation transport。這些機制仍維持有界與明確啟用：
-field-general fallback 不推斷研究家族、啟用 ledger 不授權外部呼叫，transport
-仍須取得同意。
+目前內嵌的 ARS 原始碼追蹤至已簽署 `v3.21.1` 發行版之後的上游 `main`：
+`Imbad0202/academic-research-skills@94436237913091d4739870159d241660527e8338`
+（2026-09-02；上游套件 metadata 仍為 `3.21.1`）。此 post-release snapshot
+加入中文感知的標題比對與平衡 CJK 外層括號處理，明確宣告 surface-form
+檢查所需的 Markdown parser dependency，使缺少 PyYAML 時明確失敗，並納入
+9 月 harness-retirement audit 與文件修正。v3.21.1 的 research-workflow、
+inquiry-ledger、promotion-bakeoff、review-criteria 與同意邊界維持不變。
 
 ## 安裝 ARS-Codex Plugin
 
@@ -287,10 +286,11 @@ ARS 最初是為 Claude Code 撰寫的。在此 Codex 套件中：
 - 如果引用、來源、統計數據或期刊政策無法驗證，Codex 應將其標記為未驗證，
   而非虛構支持內容。
 
-### ARS v3.21.1 功能對等
+### ARS post-v3.21.1 main 功能對等
 
-本套件旨在與上游 ARS `v3.21.1`（`127ff85e4bbfcdd10b95040537b6c6bd7ad17aeb`）
-在 Codex 具有對等概念之處，提供相同的使用者面向 workflow 內容。
+本套件旨在與上游 ARS post-`v3.21.1` `main`
+（`94436237913091d4739870159d241660527e8338`）在 Codex 具有對等概念之處，
+提供相同的使用者面向 workflow 內容；上游套件 metadata 仍為 `3.21.1`。
 
 Codex adapter 對書目網路行為採以下明確邊界：
 

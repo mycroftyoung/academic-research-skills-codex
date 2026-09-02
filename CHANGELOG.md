@@ -4,6 +4,31 @@ All notable changes to the Codex package are documented here.
 
 ## Unreleased
 
+## [0.1.28] - 2026-09-02
+
+### What's Changed
+- Synced the vendored ARS suite through post-`v3.21.1` upstream `main` commit
+  `94436237913091d4739870159d241660527e8338`; upstream suite metadata remains
+  at `3.21.1`, and component metadata remains unchanged.
+- Added Chinese-aware title matching across the four bibliographic index
+  resolvers and restricted CJK outer-wrapper stripping to one balanced unit.
+- Declared the `markdown-it-py` development dependency used by surface-form
+  checks, made a missing PyYAML dependency fail visibly, and expanded the
+  associated hermetic regression coverage.
+- Vendored the new upstream skill-inventory parity lint and mutation tests.
+  Its Claude-distribution real-tree gate remains inactive because ARS-Codex
+  intentionally uses one router, `WORKFLOW.md` entries, and no Claude loader
+  manifests or skill symlinks; the Codex-native gate now requires exact core
+  workflow parity among disk, the root router, and the full-runtime manifest.
+- Hardened source ownership validation so a secondary repository cannot claim
+  a core workflow path and silently exempt it from version checks.
+- Added the September harness-retirement audit and synchronized the R10 risk
+  register, MLA citation-key wording, setup guidance, and upstream test
+  manifest.
+- Preserved the single-root Codex router, existing path-sensitive validator
+  overlays, materialized Desktop plugin mirror, and separately pinned
+  experiment-agent v1.1.0 tree.
+
 ## [0.1.27] - 2026-08-24
 
 ### What's Changed

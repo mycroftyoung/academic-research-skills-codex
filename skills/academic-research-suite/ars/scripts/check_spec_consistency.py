@@ -14,11 +14,13 @@ if __package__:  # Package import in tests.
         NON_RELATIVE_LINK_PREFIXES,
         extract_link_targets,
     )
+    from ._skill_lint import iter_skill_files
 else:  # pragma: no cover - exercised by the CLI smoke path
     from _markdown_lint_util import (
         NON_RELATIVE_LINK_PREFIXES,
         extract_link_targets,
     )
+    from _skill_lint import iter_skill_files
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -67,6 +69,82 @@ def entry_path(rel_path: str) -> str:
     if is_codex_distribution():
         return rel_path.replace("/SKILL.md", "/WORKFLOW.md")
     return rel_path
+
+
+def codex_external_skill_names() -> frozenset[str]:
+    """Return separately sourced skills that are outside this suite's spec.
+
+    The Codex package co-locates ``experiment-agent`` under the vendored ARS
+    root, but tracks it as a separate source repository with its own version
+    contract. New workflows from the canonical ARS source remain discoverable;
+    only one-segment entries owned exclusively by another declared source are
+    excluded. Ambiguous ownership fails closed: it records a manifest error and
+    leaves the path in the suite inventory so version checks cannot be silently
+    disabled by a conflicting source declaration.
+    """
+    manifest = codex_manifest()
+    if manifest.get("generated_for") != "codex":
+        return frozenset()
+    sources = manifest.get("source_repositories")
+    if not isinstance(sources, list):
+        fail("manifest.json: source_repositories must be a list")
+        return frozenset()
+
+    primary_name = "academic-research-skills"
+    primary_indexes: list[int] = []
+    owners: dict[str, list[tuple[int, str]]] = {}
+    for index, source in enumerate(sources):
+        if not isinstance(source, dict):
+            fail(f"manifest.json: source_repositories[{index}] must be an object")
+            continue
+        source_name = source.get("name")
+        if not isinstance(source_name, str) or not source_name.strip():
+            fail(
+                f"manifest.json: source_repositories[{index}].name "
+                "must be a non-empty string"
+            )
+            continue
+        if source_name == primary_name:
+            primary_indexes.append(index)
+        included_paths = source.get("included_paths")
+        if not isinstance(included_paths, list):
+            fail(
+                f"manifest.json: source_repositories[{index}].included_paths "
+                "must be a list"
+            )
+            continue
+        for path_index, raw_path in enumerate(included_paths):
+            if not isinstance(raw_path, str):
+                fail(
+                    f"manifest.json: source_repositories[{index}].included_paths"
+                    f"[{path_index}] must be a string"
+                )
+                continue
+            path = Path(raw_path)
+            if len(path.parts) == 1:
+                owners.setdefault(path.name, []).append((index, source_name))
+
+    if len(primary_indexes) != 1:
+        fail(
+            "manifest.json: expected exactly one academic-research-skills "
+            f"source repository, found {len(primary_indexes)}"
+        )
+        return frozenset()
+
+    external_names: set[str] = set()
+    for path_name, path_owners in sorted(owners.items()):
+        unique_records = {(index, name) for index, name in path_owners}
+        if len(unique_records) > 1:
+            labels = [f"{name}[{index}]" for index, name in sorted(unique_records)]
+            fail(
+                f"manifest.json: top-level included path {path_name!r} is claimed "
+                f"by multiple source repositories: {labels!r}"
+            )
+            continue
+        _, source_name = next(iter(unique_records))
+        if source_name != primary_name:
+            external_names.add(path_name)
+    return frozenset(external_names)
 
 
 def read(rel_path: str) -> str:
@@ -149,18 +227,28 @@ def check_claude_md() -> None:
         expect_absent(rel_path, forbidden)
 
 
-# All four skills carry the same frontmatter (`version` / `last_updated`) + Version-Info-table
-# (`| Skill Version |` / `| Last Updated |`) pair. Pre-#377 only the reviewer was policed.
-_SKILL_VERSION_PATHS = (
-    "academic-pipeline/WORKFLOW.md",
-    "academic-paper/WORKFLOW.md",
-    "academic-paper-reviewer/WORKFLOW.md",
-    "deep-research/WORKFLOW.md",
-)
+# Every top-level skill carries the same frontmatter (`version` / `last_updated`) +
+# Version-Info-table (`| Skill Version |` / `| Last Updated |`) pair. Pre-#377 only
+# the reviewer was policed. Derived from disk (#809) rather than hand-listed, so a
+# new skill directory is policed the moment it exists; check_skill_inventory_parity.py
+# pins that the on-disk set matches every surface that advertises it.
+def _skill_version_paths() -> tuple[str, ...]:
+    """Read ROOT at call time and retain the entry filename found on disk.
+
+    Tests replace ``ROOT`` with upstream-style ``SKILL.md`` fixture trees, while
+    the Codex package exposes the same entries as ``WORKFLOW.md``. Returning the
+    actual relative path keeps both distributions on the same dynamic inventory.
+    """
+    external = codex_external_skill_names()
+    return tuple(
+        skill_md.relative_to(ROOT).as_posix()
+        for skill_md in iter_skill_files(ROOT)
+        if skill_md.parent.name not in external
+    )
 
 # The single skill whose `version` tracks the suite version. The other three move independently,
 # so only this one's date is sanity-checked against the release (CHANGELOG) in #377(b).
-_SUITE_SKILL_PATH = "academic-pipeline/WORKFLOW.md"
+_SUITE_SKILL_PATH = "academic-pipeline/SKILL.md"
 
 
 def _parse_skill_version_block(rel_path: str) -> tuple[str, str, str, str] | None:
@@ -193,8 +281,8 @@ def _parse_skill_version_block(rel_path: str) -> tuple[str, str, str, str] | Non
 def check_skill_version_blocks() -> None:
     """#377(a): for ALL FOUR SKILL.md, the frontmatter version/last_updated must match the
     Version-Info-table rows (an internal per-file consistency check)."""
-    for rel_path in _SKILL_VERSION_PATHS:
-        parsed = _parse_skill_version_block(entry_path(rel_path))
+    for rel_path in _skill_version_paths():
+        parsed = _parse_skill_version_block(rel_path)
         if parsed is None:
             continue
         version, last_updated, version_block, updated_block = parsed
@@ -222,7 +310,7 @@ def check_suite_skill_date_sanity() -> None:
     """#377(b): the suite-tracking skill's `last_updated` must NOT predate the latest CHANGELOG
     entry date — a release that bumps the suite version but forgets the date fails here.
 
-    Scope is deliberately narrow: only `academic-pipeline/WORKFLOW.md` (the suite-tracking skill) is
+    Scope is deliberately narrow: only `academic-pipeline/SKILL.md` (the suite-tracking skill) is
     date-checked. `academic-paper` / `academic-paper-reviewer` / `deep-research` version
     independently and legitimately keep their own earlier last-change dates, so forcing
     release-date alignment on them would be wrong (#377 out-of-scope)."""
@@ -253,7 +341,7 @@ def check_suite_skill_date_sanity() -> None:
 
 def check_pipeline_docs() -> None:
     for rel_path in (
-        "academic-pipeline/WORKFLOW.md",
+        "academic-pipeline/SKILL.md",
         "academic-pipeline/agents/pipeline_orchestrator_agent.md",
     ):
         rel_path = entry_path(rel_path)
@@ -691,7 +779,7 @@ def check_setup_docs() -> None:
 
 def check_docx_contract() -> None:
     expect_contains(
-        entry_path("academic-paper/WORKFLOW.md"),
+        entry_path("academic-paper/SKILL.md"),
         "LaTeX/DOCX-via-Pandoc/PDF output",
     )
     expect_contains(
@@ -703,7 +791,7 @@ def check_docx_contract() -> None:
         "If Pandoc is unavailable, provide complete markdown + DOCX conversion instructions",
     )
     expect_contains(
-        entry_path("academic-pipeline/WORKFLOW.md"),
+        entry_path("academic-pipeline/SKILL.md"),
         "DOCX via Pandoc when available, otherwise conversion instructions",
     )
     expect_contains(
@@ -711,7 +799,7 @@ def check_docx_contract() -> None:
         "DOCX via Pandoc when available (otherwise instructions)",
     )
     for rel_path in (
-        "academic-pipeline/WORKFLOW.md",
+        "academic-pipeline/SKILL.md",
         "academic-pipeline/agents/pipeline_orchestrator_agent.md",
     ):
         rel_path = entry_path(rel_path)
@@ -753,13 +841,8 @@ def check_rebuttal_audit_guard() -> None:
     pipeline stage; if the suppression language is ever dropped, the mode would
     silently re-introduce the false-certification risk it was designed to avoid.
     """
-    logical_rel_path = "academic-paper/WORKFLOW.md"
-    try:
-        rel_path = logical_rel_path
-        text = read(logical_rel_path)
-    except FileNotFoundError:
-        rel_path = entry_path(logical_rel_path)
-        text = read(rel_path)
+    rel_path = entry_path("academic-paper/SKILL.md")
+    text = read(rel_path)
     m = re.search(r"##\s*Rebuttal-Audit Mode.*?(?=\n##\s|\Z)", text, re.DOTALL)
     section = m.group(0) if m else ""
     if not section:

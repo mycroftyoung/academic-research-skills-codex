@@ -1,6 +1,6 @@
 # ARS-Codex Compatibility Matrix
 
-Audit date: 2026-08-24
+Audit date: 2026-09-02
 
 ## Provenance
 
@@ -10,9 +10,9 @@ Audit date: 2026-08-24
 | Upstream Claude Code repo | Tracked in `skills/academic-research-suite/manifest.json` |
 | Upstream suite version | `v3.21.1` |
 | Upstream component versions | deep-research `2.12.1`; academic-paper `3.3.1`; academic-paper-reviewer `1.11.1`; academic-pipeline `3.21.1` |
-| Codex package version | `0.1.27` |
+| Codex package version | `0.1.28` |
 | License | CC BY-NC 4.0 in upstream and Codex package |
-| Upstream sync status | Vendored `ars/` content synced to the signed ARS release `v3.21.1` (peeled commit `127ff85e4bbfcdd10b95040537b6c6bd7ad17aeb`); Codex adapter profile retained |
+| Upstream sync status | Vendored `ars/` content synced through post-`v3.21.1` upstream `main` commit `94436237913091d4739870159d241660527e8338` (suite metadata remains `3.21.1`); Codex adapter profile retained |
 | Codex-only adapter location | `skills/academic-research-suite/codex/` |
 
 ## Matrix
@@ -61,6 +61,13 @@ Audit date: 2026-08-24
   Inline execution remains the default.
 - ARS-Codex has its own native Codex marketplace package; Claude-specific
   plugin commands, slash-command registration, and hook lifecycle are not reproduced.
+- The upstream skill-inventory parity script and its hermetic mutation tests are
+  vendored, but its real-tree gate is inactive: it targets `.claude*` manifests,
+  top-level `SKILL.md` files, and `skills/` symlinks that this single-router
+  Codex distribution intentionally replaces. The Codex-native single-root gate
+  instead requires exact core-inventory parity among disk `WORKFLOW.md` entries,
+  the root router, and the full-runtime manifest; the Desktop bundle remains
+  byte-identical to that canonical tree.
 - Claude Code `SessionStart` and future `SubagentStop` hooks are not installed
   automatically. The v3.18 update reminder therefore remains inactive; the
   Codex hook pack is manual and read-only.

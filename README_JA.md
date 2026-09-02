@@ -1,6 +1,6 @@
 # ARS-Codex
 
-[![Version](https://img.shields.io/badge/version-v0.1.27-blue)](VERSION)
+[![Version](https://img.shields.io/badge/version-v0.1.28-blue)](VERSION)
 [![License: CC BY-NC 4.0](https://img.shields.io/badge/license-CC%20BY--NC%204.0-lightgrey)](https://creativecommons.org/licenses/by-nc/4.0/)
 [![Sponsor](https://img.shields.io/badge/sponsor-Buy%20Me%20a%20Coffee-orange?logo=buy-me-a-coffee)](https://buymeacoffee.com/crucify020v)
 
@@ -36,11 +36,11 @@ Claude Code ネイティブのスキルレイアウト、Claude 固有の agent-
 
 ## バージョニング
 
-この ARS-Codex パッケージのバージョンは `0.1.27` です。リポジトリルートの `VERSION` ファイル、`skills/academic-research-suite/SKILL.md` のメタデータバージョン、および `skills/academic-research-suite/manifest.json` の `adapter_version` は、ベンダリングされた ARS スイートとは独立して Codex パッケージのバージョンを管理します。ベンダリングされたアップストリームのバージョンは `manifest.source_repositories[]` にコミット単位で記録されています。
+この ARS-Codex パッケージのバージョンは `0.1.28` です。リポジトリルートの `VERSION` ファイル、`skills/academic-research-suite/SKILL.md` のメタデータバージョン、および `skills/academic-research-suite/manifest.json` の `adapter_version` は、ベンダリングされた ARS スイートとは独立して Codex パッケージのバージョンを管理します。ベンダリングされたアップストリームのバージョンは `manifest.source_repositories[]` にコミット単位で記録されています。
 
 パッケージレベルの変更内容は [`CHANGELOG.md`](CHANGELOG.md) にまとめられています。
 
-現在ベンダリングされている ARS ソースは、署名済みリリース `v3.21.1` の `Imbad0202/academic-research-skills@127ff85e4bbfcdd10b95040537b6c6bd7ad17aeb`（2026-08-24）を追跡しています。このリリースでは、デフォルト無効の deterministic research-workflow profile、opt-in の inquiry branch ledger alpha、将来の model-promotion bakeoff 用 sealed preregistration、および source-backed review-criteria proving set が追加され、Codex CLI 0.147.0 に対する subscription citation transport も修復されました。各機構は引き続き限定的かつ明示的 opt-in です。field-general fallback は research family を推測せず、ledger の有効化は外部呼び出しを許可せず、transport には同意が必要です。
+現在ベンダリングされている ARS ソースは、署名済みリリース `v3.21.1` 後の upstream `main`、`Imbad0202/academic-research-skills@94436237913091d4739870159d241660527e8338`（2026-09-02、upstream suite metadata は引き続き `3.21.1`）を追跡しています。この post-release snapshot では、中国語を考慮したタイトル照合と balanced CJK wrapper 処理、surface-form check が使用する Markdown parser dependency、PyYAML 不在時の明示的 failure、9 月の harness-retirement audit、および文書修正が追加されました。v3.21.1 の research-workflow、inquiry-ledger、promotion-bakeoff、review-criteria、および同意境界は変更されていません。
 
 ## ARS-Codex Plugin のインストール
 
@@ -247,9 +247,9 @@ ARS は元々 Claude Code 向けに作成されました。この Codex パッ�
 - アップストリームの「fresh Claude Code session」という記述は、このパッケージでは新しい Codex セッションを意味します。Material Passport のリセットセマンティクスは引き続き適用されます。
 - 引用、ソース、統計、またはジャーナルポリシーが検証できない場合、Codex は根拠を捏生するのではなく、未検証としてマークする必要があります。
 
-### ARS v3.21.1 パリティ
+### ARS post-v3.21.1 main パリティ
 
-このパッケージは、Codex に同等の概念が存在する範囲で、アップストリーム ARS `v3.21.1`（`127ff85e4bbfcdd10b95040537b6c6bd7ad17aeb`）と同等のユーザー向けワークフロー内容を目指しています。
+このパッケージは、Codex に同等の概念が存在する範囲で、アップストリーム ARS post-`v3.21.1` `main`（`94436237913091d4739870159d241660527e8338`）と同等のユーザー向けワークフロー内容を目指しています。アップストリームの suite metadata は引き続き `3.21.1` です。
 
 | アップストリーム ARS 機能 | Codex パッケージの動作 |
 |---|---|

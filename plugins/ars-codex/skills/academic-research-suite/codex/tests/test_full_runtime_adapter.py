@@ -24,6 +24,98 @@ def _load_planner():
     return module
 
 
+def _load_gates():
+    spec = importlib.util.spec_from_file_location("ars_codex_quality_gates", GATES_PATH)
+    module = importlib.util.module_from_spec(spec)
+    assert spec and spec.loader
+    spec.loader.exec_module(module)
+    return module
+
+
+_CORE_WORKFLOWS = {
+    "deep-research",
+    "academic-paper",
+    "academic-paper-reviewer",
+    "academic-pipeline",
+}
+_EXTERNAL_WORKFLOWS = {"experiment-agent"}
+_REQUIRED_WORKFLOWS = _CORE_WORKFLOWS | _EXTERNAL_WORKFLOWS
+
+
+def _inventory_gate_fixture(
+    tmp_path: Path,
+    monkeypatch,
+    *,
+    disk_names: set[str] | None = None,
+    router_names: set[str] | None = None,
+    runtime_names: set[str] | None = None,
+    external_names: set[str] | None = None,
+    router_preamble: str = "",
+    router_trailer: str = "",
+):
+    gates = _load_gates()
+    suite_root = tmp_path / "academic-research-suite"
+    ars_root = suite_root / "ars"
+    codex_root = suite_root / "codex"
+    ars_root.mkdir(parents=True)
+    codex_root.mkdir()
+
+    disk_names = set(_REQUIRED_WORKFLOWS if disk_names is None else disk_names)
+    router_names = set(_REQUIRED_WORKFLOWS if router_names is None else router_names)
+    runtime_names = set(_REQUIRED_WORKFLOWS if runtime_names is None else runtime_names)
+    external_names = set(_EXTERNAL_WORKFLOWS if external_names is None else external_names)
+
+    for name in disk_names:
+        entry = ars_root / name / "WORKFLOW.md"
+        entry.parent.mkdir()
+        entry.write_text(f"# {name}\n", encoding="utf-8")
+
+    router_rows = "\n".join(
+        f"| {name} intent | `ars/{name}/WORKFLOW.md` |"
+        for name in sorted(router_names)
+    )
+    (suite_root / "SKILL.md").write_text(
+        "# Fixture router\n\n"
+        "## Workflow Router\n\n"
+        f"{router_preamble}"
+        "| User intent | Read first |\n"
+        "|---|---|\n"
+        f"{router_rows}\n\n"
+        f"{router_trailer}"
+        "## Next Section\n",
+        encoding="utf-8",
+    )
+    full_runtime_manifest = codex_root / "full-runtime-manifest.json"
+    full_runtime_manifest.write_text(
+        json.dumps({"workflows": {name: {} for name in sorted(runtime_names)}}),
+        encoding="utf-8",
+    )
+    package_manifest = suite_root / "manifest.json"
+    package_manifest.write_text(
+        json.dumps(
+            {
+                "source_repositories": [
+                    {
+                        "name": "academic-research-skills",
+                        "included_paths": sorted(_CORE_WORKFLOWS),
+                    },
+                    {
+                        "name": "external-fixture",
+                        "included_paths": sorted(external_names),
+                    },
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    monkeypatch.setattr(gates, "SUITE_ROOT", suite_root)
+    monkeypatch.setattr(gates, "ARS_ROOT", ars_root)
+    monkeypatch.setattr(gates, "FULL_RUNTIME_MANIFEST", full_runtime_manifest)
+    monkeypatch.setattr(gates, "PACKAGE_MANIFEST", package_manifest)
+    return gates
+
+
 def test_vague_paper_topic_routes_to_deep_research_socratic() -> None:
     planner = _load_planner()
     plan = planner.plan_request(
@@ -562,6 +654,183 @@ def test_quality_gates_all_pass() -> None:
     )
     payload = json.loads(result.stdout)
     assert all(item["ok"] for item in payload.values()), payload
+
+
+def test_single_root_inventory_matches_all_codex_surfaces(
+    tmp_path: Path, monkeypatch
+) -> None:
+    gates = _inventory_gate_fixture(tmp_path, monkeypatch)
+    messages = gates.check_single_root_skill()
+    assert any("4 core workflows match" in message for message in messages)
+    assert any("1 separately sourced workflow" in message for message in messages)
+
+
+@pytest.mark.parametrize(
+    ("mutated_surface", "error_pattern"),
+    [
+        ("disk", r"core workflow inventory mismatch for root_router"),
+        ("router", r"root router lists workflows without WORKFLOW\.md on disk"),
+        (
+            "runtime",
+            r"full-runtime manifest lists workflows without WORKFLOW\.md on disk",
+        ),
+    ],
+)
+def test_single_root_inventory_rejects_unpaired_workflow_mutations(
+    tmp_path: Path,
+    monkeypatch,
+    mutated_surface: str,
+    error_pattern: str,
+) -> None:
+    names = {
+        "disk": set(_REQUIRED_WORKFLOWS),
+        "router": set(_REQUIRED_WORKFLOWS),
+        "runtime": set(_REQUIRED_WORKFLOWS),
+    }
+    names[mutated_surface].add("unrouted-workflow")
+    gates = _inventory_gate_fixture(
+        tmp_path,
+        monkeypatch,
+        disk_names=names["disk"],
+        router_names=names["router"],
+        runtime_names=names["runtime"],
+    )
+    with pytest.raises(
+        gates.GateFailure,
+        match=error_pattern,
+    ):
+        gates.check_single_root_skill()
+
+
+def test_single_root_inventory_allows_separately_sourced_trace_workflow(
+    tmp_path: Path, monkeypatch
+) -> None:
+    gates = _inventory_gate_fixture(
+        tmp_path,
+        monkeypatch,
+        disk_names=_REQUIRED_WORKFLOWS | {"trace-addon"},
+        external_names=_EXTERNAL_WORKFLOWS | {"trace-addon"},
+    )
+    messages = gates.check_single_root_skill()
+    assert any("4 core workflows match" in message for message in messages)
+    assert any("2 separately sourced workflow" in message for message in messages)
+
+
+@pytest.mark.parametrize("mutated_surface", ["router", "runtime"])
+def test_single_root_inventory_rejects_dangling_external_routes(
+    tmp_path: Path, monkeypatch, mutated_surface: str
+) -> None:
+    names = {
+        "router": set(_REQUIRED_WORKFLOWS),
+        "runtime": set(_REQUIRED_WORKFLOWS),
+    }
+    names[mutated_surface].add("trace-addon")
+    gates = _inventory_gate_fixture(
+        tmp_path,
+        monkeypatch,
+        router_names=names["router"],
+        runtime_names=names["runtime"],
+        external_names=_EXTERNAL_WORKFLOWS | {"trace-addon"},
+    )
+    with pytest.raises(
+        gates.GateFailure,
+        match=r"lists workflows without WORKFLOW\.md on disk: \['trace-addon'\]",
+    ):
+        gates.check_single_root_skill()
+
+
+@pytest.mark.parametrize("mutated_surface", ["router", "runtime"])
+def test_single_root_inventory_rejects_partially_advertised_external_workflow(
+    tmp_path: Path, monkeypatch, mutated_surface: str
+) -> None:
+    names = {
+        "router": set(_REQUIRED_WORKFLOWS),
+        "runtime": set(_REQUIRED_WORKFLOWS),
+    }
+    names[mutated_surface].add("trace-addon")
+    gates = _inventory_gate_fixture(
+        tmp_path,
+        monkeypatch,
+        disk_names=_REQUIRED_WORKFLOWS | {"trace-addon"},
+        router_names=names["router"],
+        runtime_names=names["runtime"],
+        external_names=_EXTERNAL_WORKFLOWS | {"trace-addon"},
+    )
+    with pytest.raises(
+        gates.GateFailure,
+        match=r"separately sourced workflow inventory mismatch",
+    ):
+        gates.check_single_root_skill()
+
+
+def test_secondary_source_overlap_does_not_exclude_core_workflow(
+    tmp_path: Path, monkeypatch
+) -> None:
+    gates = _inventory_gate_fixture(
+        tmp_path,
+        monkeypatch,
+        external_names=_EXTERNAL_WORKFLOWS | {"academic-paper"},
+    )
+    package = json.loads(gates.PACKAGE_MANIFEST.read_text(encoding="utf-8"))
+    assert gates._external_workflow_names(package) == _EXTERNAL_WORKFLOWS
+
+
+def test_incidental_table_does_not_count_as_root_router_enumeration(
+    tmp_path: Path, monkeypatch
+) -> None:
+    gates = _inventory_gate_fixture(
+        tmp_path,
+        monkeypatch,
+        disk_names=_REQUIRED_WORKFLOWS | {"unrouted-workflow"},
+        router_trailer=(
+            "### Incidental comparison\n\n"
+            "| Note | Example |\n"
+            "|---|---|\n"
+            "| Not a route | `ars/unrouted-workflow/WORKFLOW.md` |\n\n"
+        ),
+    )
+    with pytest.raises(
+        gates.GateFailure,
+        match=r"missing_from_root_router=\['unrouted-workflow'\]",
+    ):
+        gates.check_single_root_skill()
+
+
+def test_incidental_table_before_router_table_is_rejected(
+    tmp_path: Path, monkeypatch
+) -> None:
+    gates = _inventory_gate_fixture(
+        tmp_path,
+        monkeypatch,
+        router_preamble=(
+            "| Note | Example |\n"
+            "|---|---|\n"
+            "| Not a route | `ars/deep-research/WORKFLOW.md` |\n\n"
+        ),
+    )
+    with pytest.raises(
+        gates.GateFailure,
+        match=r"table headers must include exactly one 'User intent' and 'Read first'",
+    ):
+        gates.check_single_root_skill()
+
+
+def test_route_like_path_outside_read_first_column_is_rejected(
+    tmp_path: Path, monkeypatch
+) -> None:
+    gates = _inventory_gate_fixture(tmp_path, monkeypatch)
+    root_skill = gates.SUITE_ROOT / "SKILL.md"
+    text = root_skill.read_text(encoding="utf-8")
+    text = text.replace(
+        "| academic-paper intent | `ars/academic-paper/WORKFLOW.md` |",
+        "| `ars/academic-paper/WORKFLOW.md` | Not a route |",
+    )
+    root_skill.write_text(text, encoding="utf-8")
+    with pytest.raises(
+        gates.GateFailure,
+        match=r"Read first cell must contain exactly one",
+    ):
+        gates.check_single_root_skill()
 
 
 def test_model_tiering_lint_accepts_separately_vendored_experiment_agents() -> None:
